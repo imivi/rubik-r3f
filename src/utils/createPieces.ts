@@ -1,4 +1,5 @@
 import { Mesh, BoxGeometry, MeshNormalMaterial, Vector3, Group } from "three"
+import { createColoredPieceGeometry } from "./createColoredPieceGeometry"
 
 
 
@@ -29,9 +30,13 @@ export function getCubePositions(): Vector3[] {
 
 export function createPiece(position: Vector3): Piece {
 
-    const cubeGeometry = new BoxGeometry(1,1,1)
-    const cubeMaterial = new MeshNormalMaterial()
-    const cube = new Mesh(cubeGeometry, cubeMaterial)
+    // const cubeGeometry = new BoxGeometry(1,1,1)
+    // const cubeMaterial = new MeshNormalMaterial()
+
+    const { geometry, material } = createColoredPieceGeometry()
+    
+    const cube = new Mesh(geometry, material)
+
 
     // const subCube = new Mesh(new BoxGeometry(0.2,0.2,0.2), new MeshNormalMaterial())
 

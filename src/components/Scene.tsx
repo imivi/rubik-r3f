@@ -4,7 +4,7 @@ import { OrbitControls, PerspectiveCamera } from "@react-three/drei"
 import { Suspense, useState } from "react"
 import { Vector3 } from "three"
 import { type Piece, createPieces } from "../utils/createPieces"
-import { Face, faces, getAxisOfRotation, getFacePieces } from "../utils/getFacePieces"
+import { Face, faces, getAxisOfRotation, getFacePieces, getWorldPosition } from "../utils/getFacePieces"
 import { applyRotation } from "../utils/applyRotation"
 import { Rotate2, RotateClockwise2 } from "tabler-icons-react"
 
@@ -36,7 +36,20 @@ export function Scene() {
         const rotationAxis = getAxisOfRotation(face)
         // console.log({ pieces })
 
-        facePieces.forEach(piece => piece.rotation[rotationAxis] += (clockwise ? -1 : 1) * Math.PI/12)
+        /*
+        console.log("Face piece positions:")
+        facePieces.forEach(piece => {
+            const pos = piece.children[0].position.clone()
+            pos.applyQuaternion(piece.quaternion)
+            console.log(pos)
+        })
+        */
+
+        // const positions = facePieces.map(piece => piece.children[0].position)
+        // console.log(positions)
+        // console.log(positions.map(pos => pos.clone().applyQuaternion()))
+
+        facePieces.forEach(piece => piece.rotation[rotationAxis] += (clockwise ? -1 : 1) * Math.PI/4)
 
         // setTargetRotation(Math.PI/2)
 
@@ -57,6 +70,7 @@ export function Scene() {
     function applyFaceRotation(face: Face) {
         const facePieces = getFacePieces(pieces, face)
         facePieces.forEach(piece => applyRotation(piece))
+        invalidate()
     }
 
     // function applyRotation() {
@@ -76,10 +90,16 @@ export function Scene() {
 
     // console.log("Cubes:", cubes)
 
+    function logWorldPositions() {
+        const positions = pieces.map(piece => getWorldPosition(piece))
+        console.log(positions)
+    }
+
     return (
         <div id="Scene">
             <div className="controls">
                 <button onClick={ () => console.log(pieces) }>Log pieces</button>
+                <button onClick={ logWorldPositions }>Log world positions</button>
                 {
                     faces.map(face => (
                         <div key={ face }>
@@ -99,9 +119,13 @@ export function Scene() {
                     <OrbitControls/>
                     <PerspectiveCamera position={ new Vector3(0,10,10) } makeDefault/>
 
-                    <group>
+                    <hemisphereLight intensity={ 4 }/>
+                    <ambientLight intensity={ 0.3 }/>
+
+                    <group onClick={ (e) => console.log(e.intersections) }>
                         { pieces.map((piece,i) => <primitive object={ piece } key={ i }/> )}
                     </group>
+                    
 
                 </Canvas>
             </Suspense>
