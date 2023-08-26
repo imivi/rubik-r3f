@@ -1,66 +1,23 @@
 import "./Scene.scss"
-import { Canvas, invalidate, useFrame } from "@react-three/fiber"
+import { Canvas, invalidate } from "@react-three/fiber"
 import { OrbitControls, PerspectiveCamera } from "@react-three/drei"
-import { Suspense, useEffect, useRef, useState } from "react"
-import { Mesh, BoxGeometry, MeshNormalMaterial, Vector3, Group, Object3D } from "three"
-
-// import { Subcube } from "./Subcube"
-
-
-function getCubePositions() {
-    const positions: Vector3[] = []
-    
-    for(let layer=0; layer<3; layer++) {
-        for(let row=0; row<3; row++) {
-            for(let col=0; col<3; col++) {
-                positions.push(new Vector3(layer-1, row-1, col-1).multiplyScalar(1.01))
-            }
-        }
-    }
-    return positions
-}
-
-// const positions = getCubePositions()
+import { Suspense, useState } from "react"
+import { Vector3 } from "three"
+import { type Piece, createPieces } from "../utils/createPieces"
+import { Face, faces, getAxisOfRotation, getFacePieces } from "../utils/getFacePieces"
+import { applyRotation } from "../utils/applyRotation"
+import { Rotate2, RotateClockwise2 } from "tabler-icons-react"
 
 
 
-function createCubes(): Mesh[] {
-    const cubeGeometry = new BoxGeometry(1,1,1)
-    const cubeMaterial = new MeshNormalMaterial()
-    
-    const positions = getCubePositions()
 
-    const cubes = positions.map(position => {
-        const cube = new Mesh(cubeGeometry, cubeMaterial)
-        const { x, y, z } = position
-        cube.position.set(x,y,z)
-        return cube
-    })
-
-    return cubes
-}
-
-type Cube = Mesh
-
-// const cubes = createCubes()
-
-type Cubes = {
-    active: Group
-    inactive: Group
-}
-
-const cubes: Cubes = {
-    active: new Group(),
-    inactive: new Group(),
-}
-cubes.inactive.add(...createCubes())
+const pieces: Piece[] = createPieces()
 
 const upAxis = new Vector3(0,1,0)
 
 export function Scene() {
 
-    const [rotationAxis, setRotationAxis] = useState<"x"|"y"|"z">("y")
-    const [targetRotation, setTargetRotation] = useState(0)
+    // const [targetRotation, setTargetRotation] = useState(0)
     
     // console.log(positions)
 
@@ -74,25 +31,16 @@ export function Scene() {
     }, [])
     */
 
-    function getTopLayerCubes() {
-        const allCubes = [...cubes.active.children, ...cubes.inactive.children]
-        const active = allCubes.filter(cube => cube.position.y > 0.5)
-        const inactive = allCubes.filter(cube => cube.position.y <= 0.5)
-        cubes.active.add(...active)
-        cubes.inactive.add(...inactive)
-        // return cubes.active
-    }
+    function rotateFace(face: Face, clockwise=true) {
+        const facePieces = getFacePieces(pieces, face)
+        const rotationAxis = getAxisOfRotation(face)
+        // console.log({ pieces })
 
-    function rotateTopLayer() {
-        getTopLayerCubes()
-        
-        // console.log({ cubes })
+        facePieces.forEach(piece => piece.rotation[rotationAxis] += (clockwise ? -1 : 1) * Math.PI/12)
 
-        setRotationAxis("y")
         // setTargetRotation(Math.PI/2)
 
-        cubes.active.rotation[rotationAxis] += Math.PI/12
-
+        // cubes.active.rotation[rotationAxis] += Math.PI/12
 
         // cubes.active.rotateOnWorldAxis(upAxis, Math.PI/12)
         // console.log(cubes.active.rotation)
@@ -106,12 +54,17 @@ export function Scene() {
         invalidate()
     }
 
-    function applyRotation() {
-        cubes.active.updateMatrix()
-        cubes.active.children.forEach(cube => (cube as Mesh).geometry.applyMatrix4(cubes.active.matrix))
-        cubes.active.rotation.set(0,0,0)
-        cubes.active.updateMatrix()
+    function applyFaceRotation(face: Face) {
+        const facePieces = getFacePieces(pieces, face)
+        facePieces.forEach(piece => applyRotation(piece))
     }
+
+    // function applyRotation() {
+    //     cubes.active.updateMatrix()
+    //     cubes.active.children.forEach(cube => (cube as Mesh).geometry.applyMatrix4(cubes.active.matrix))
+    //     cubes.active.rotation.set(0,0,0)
+    //     cubes.active.updateMatrix()
+    // }
 
     /*
     useFrame(() => {
@@ -126,23 +79,30 @@ export function Scene() {
     return (
         <div id="Scene">
             <div className="controls">
-                <button onClick={ () => console.log(cubes) }>Log cubes</button>
-                <button onClick={ rotateTopLayer }>Rotate top layer</button>
-                <button onClick={ applyRotation }>Apply rotation</button>
+                <button onClick={ () => console.log(pieces) }>Log pieces</button>
+                {
+                    faces.map(face => (
+                        <div key={ face }>
+                            <button onClick={ () => rotateFace(face, false) }>
+                                <Rotate2/> { face }
+                            </button>
+                            <button onClick={ () => rotateFace(face) }>
+                                <RotateClockwise2/> { face }
+                            </button>
+                            <button onClick={ () => applyFaceRotation(face) }>Apply rotation</button>
+                        </div>
+                    ))
+                }
             </div>
             <Suspense fallback={ null }>
                 <Canvas frameloop="demand">
                     <OrbitControls/>
                     <PerspectiveCamera position={ new Vector3(0,10,10) } makeDefault/>
 
-                    <primitive object={ cubes.active }/>
-                    <primitive object={ cubes.inactive }/>
-                    {/* <group>
-                        { cubes.active.map((cube,i) => <primitive object={ cube } key={ i }/>) }
-                    </group>
                     <group>
-                        { cubes.inactive.map((cube,i) => <primitive object={ cube } key={ i }/>) }
-                    </group> */}
+                        { pieces.map((piece,i) => <primitive object={ piece } key={ i }/> )}
+                    </group>
+
                 </Canvas>
             </Suspense>
         </div>
