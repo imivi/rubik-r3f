@@ -1,12 +1,13 @@
 import "./Scene.scss"
-import { Canvas, invalidate } from "@react-three/fiber"
-import { OrbitControls, PerspectiveCamera } from "@react-three/drei"
-import { Suspense, useState } from "react"
-import { Vector3 } from "three"
-import { type Piece, createPieces } from "../utils/createPieces"
+import { Canvas, invalidate, useLoader } from "@react-three/fiber"
+import { OrbitControls, PerspectiveCamera, useCubeTexture } from "@react-three/drei"
+import { Suspense, useEffect, useRef, useState } from "react"
+import { CubeTextureLoader, Material, MeshBasicMaterial, Vector3 } from "three"
+import { type Piece, createPieces, getCubePositions } from "../utils/createPieces"
 import { Face, faces, getAxisOfRotation, getFacePieces, getWorldPosition } from "../utils/getFacePieces"
 import { applyRotation } from "../utils/applyRotation"
 import { Rotate2, RotateClockwise2 } from "tabler-icons-react"
+import { colorMaterials, createPiece, faceColorsDefault } from "../utils/createPiece"
 
 
 
@@ -122,13 +123,97 @@ export function Scene() {
                     <hemisphereLight intensity={ 4 }/>
                     <ambientLight intensity={ 0.3 }/>
 
-                    <group onClick={ (e) => console.log(e.intersections) }>
+                    <PieceWithFaces/>
+
+                    {/* <group onClick={ (e) => console.log(e.intersections) }>
                         { pieces.map((piece,i) => <primitive object={ piece } key={ i }/> )}
-                    </group>
+                    </group> */}
                     
 
                 </Canvas>
             </Suspense>
         </div>
+    )
+}
+
+function PieceWithFaces() {
+
+    const [pieces, setPieces] = useState<Piece[]>([])
+
+    useEffect(() => {
+        const positions = getCubePositions()
+        const pieces = positions.map(pos => createPiece(faceColorsDefault, pos.toArray(), colorMaterials))
+        setPieces(pieces)
+        // const piece = createPiece(faceColorsDefault, [-5,0,5], colorMaterials)
+    }, [])
+    
+    return <>
+    {
+        pieces.map((piece,i) => (
+            <primitive object={ piece } key={ i }/>
+        ))
+    }
+    </>
+}
+
+
+function TexturedPiece() {
+    
+    const cubeTexture = useCubeTexture([
+        'black.png',
+        'red.png',
+        'yellow.png',
+        'white.png',
+        'blue.png',
+        'green.png'
+    ], { path: '/cube-textures/' })
+
+    // const textureCube = loader.load( [
+    //     'px.png', 'nx.png',
+    //     'py.png', 'ny.png',
+    //     'pz.png', 'nz.png'
+    // ] );
+
+    const material = new MeshBasicMaterial({ color: 0xffffff, map: cubeTexture })
+
+    return (
+        <mesh material={ material } position={ new Vector3(5,0,5) }>
+            <boxGeometry args={[3,3,3]}/>
+        </mesh>
+    )
+}
+
+
+function TexturedPieceVanilla() {
+
+    const [material, setMaterial] = useState<Material|null>()
+
+    useEffect(() => {
+
+        const loader = new CubeTextureLoader()
+        loader.setPath( '/cube-textures/' )
+    
+        const textureCube = loader.load( [
+            'black.png',
+            'red.png',
+            'yellow.png',
+            'white.png',
+            'blue.png',
+            'green.png',
+        ] );
+    
+        setMaterial(new MeshBasicMaterial( { color: 0xffffff, envMap: textureCube, reflectivity: 1 } ))
+        // materialRef.current.needsUpdate = true
+        // invalidate()
+    }, [])
+
+    if(!material) {
+        return null
+    }
+
+    return (
+        <mesh material={ material } position={ new Vector3(4,0,4) }>
+            <boxGeometry args={[3,3,3]}/>
+        </mesh>
     )
 }

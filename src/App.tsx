@@ -1,10 +1,10 @@
-import { Scene } from './components/Scene'
+import { Scene2 } from './components/Scene2'
 
 function App() {
 
   return (
     <>
-      <Scene/>
+      <Scene2/>
     </>
   )
 }

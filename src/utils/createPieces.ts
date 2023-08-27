@@ -33,7 +33,8 @@ export function createPiece(position: Vector3): Piece {
     // const cubeGeometry = new BoxGeometry(1,1,1)
     // const cubeMaterial = new MeshNormalMaterial()
 
-    const { geometry, material } = createColoredPieceGeometry()
+    // const { geometry, material } = createColoredPieceGeometry()
+    const { geometry, material } = createPieceGeometry()
     
     const cube = new Mesh(geometry, material)
 
@@ -50,6 +51,14 @@ export function createPiece(position: Vector3): Piece {
     // group.add(subCube)
 
     return group
+}
+
+
+function createPieceGeometry() {
+    return {
+        geometry: new BoxGeometry(1,1,1),
+        material: new MeshNormalMaterial()
+    }
 }
 
 
