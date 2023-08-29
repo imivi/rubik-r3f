@@ -1,7 +1,7 @@
 import "./Scene.scss"
-import { Canvas, invalidate, useLoader } from "@react-three/fiber"
+import { Canvas, ThreeEvent, invalidate, useFrame, useLoader, useThree } from "@react-three/fiber"
 import { OrbitControls, PerspectiveCamera, useCubeTexture } from "@react-three/drei"
-import { Suspense, useEffect, useRef, useState } from "react"
+import { ReactNode, Suspense, useEffect, useRef, useState } from "react"
 import { CubeTextureLoader, Group, Material, Mesh, MeshBasicMaterial, Vector3 } from "three"
 import { type Piece, getCubePositions } from "../utils/createPieces"
 import { Face, faces, getAxisOfRotation, getFacePieces, getWorldPosition } from "../utils/getFacePieces"
@@ -15,9 +15,10 @@ function createPieces(positions: Vector3[]): Group[] {
 
     const pieces: Group[] = []
     
-    positions.forEach(pos => {
+    positions.forEach((pos,i) => {
         const mesh = createPiece(faceColorsDefault, pos.toArray(), colorMaterials)
         const group = new Group()
+        group.userData["index"] = i
         group.add(mesh)
         pieces.push(group)
     })
@@ -32,11 +33,61 @@ function applyRotation(group: Group): void {
     group.updateMatrix()
 }
 
+/*
+function Scene2({ children }: { children: ReactNode }) {
+    return (
+        <div id="Scene">
+            <div className="controls">
+                <button onClick={ () => console.log(pieces) }>Log pieces</button>
+                <button onClick={ logWorldPositions }>Log world positions</button>
+                {
+                    faces.map(face => (
+                        <div key={ face }>
+                            <button onClick={ () => rotateFace(face, false) }>
+                                <Rotate2/> { face }
+                            </button>
+                            <button onClick={ () => rotateFace(face) }>
+                                <RotateClockwise2/> { face }
+                            </button>
+                            <button onClick={ () => applyFaceRotation(face) }>Apply rotation</button>
+                        </div>
+                    ))
+                }
+            </div>
+            <Suspense fallback={ null }>
+                <Canvas frameloop="demand">
+                    <OrbitControls/>
+                    <PerspectiveCamera position={ new Vector3(0,10,10) } makeDefault/>
+
+                    <hemisphereLight intensity={ 4 }/>
+                    <ambientLight intensity={ 0.3 }/>
+
+                    { children }
+
+                </Canvas>
+            </Suspense>
+        </div>
+    )
+}
+*/
 
 export function Scene2() {
 
 
     const [pieces, setPieces] = useState<Piece[]>([])
+
+    const currentFacePiecesRef = useRef<Piece[]>([])
+    const targetRotationRef = useRef(new Vector3(0,0,0))
+
+    // useFrame(() => {
+    //     const facePieces = currentFacePiecesRef.current
+    //     if(facePieces.length === 0) {
+    //         return
+    //     }
+    //     // const targetRotation = targetRotationRef.current
+    //     facePieces.forEach(piece => piece.rotation.x += 0.1)
+    // })
+
 
     useEffect(() => {
         const positions = getCubePositions()
@@ -67,6 +118,17 @@ export function Scene2() {
         console.log(positions)
     }
 
+    function handlePointerDown(event: ThreeEvent<PointerEvent>) {
+        // event.stopPropagation()
+
+        // console.log(event.intersections)
+        const intersectedFaces = event.intersections
+        const intersectedPieces = intersectedFaces.map(int => int.eventObject.parent)
+
+        const piecesIds = new Set(intersectedPieces.map(piece => piece?.uuid))
+        console.log(intersectedPieces, piecesIds)
+    }
+
     return (
         <div id="Scene">
             <div className="controls">
@@ -94,14 +156,32 @@ export function Scene2() {
                     <hemisphereLight intensity={ 4 }/>
                     <ambientLight intensity={ 0.3 }/>
 
-                    <group>
-                        { pieces.map((piece,i) => (
-                            <primitive object={ piece } key={ i }/>
-                        )) }
-                    </group>
+                    <Cube pieces={ pieces } onPointerDown={ handlePointerDown }/>
 
                 </Canvas>
             </Suspense>
         </div>
     )
+}
+
+
+
+
+function Cube({ pieces, onPointerDown }: { pieces: Piece[], onPointerDown: (event: ThreeEvent<PointerEvent>) => void }) {
+
+    // useFrame((state, delta, frame) => {
+    //     console.log(state.raycaster)
+    // })
+
+    // const { raycaster } = useThree()
+
+    return <>
+        { pieces.map((piece,i) => (
+            <primitive
+                object={ piece }
+                key={ i }
+                // onPointerDown={ (e) => onPointerDown(e) }
+            />
+        )) }
+    </>
 }

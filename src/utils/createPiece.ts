@@ -26,14 +26,14 @@ export const colorMaterials: ColorMaterials = {
     "blue": new MeshBasicMaterial({ color: "blue", side: DoubleSide }),
     "white": new MeshBasicMaterial({ color: "white", side: DoubleSide }),
     "green": new MeshBasicMaterial({ color: "green", side: DoubleSide }),
-    "black": new MeshBasicMaterial({ color: "black", side: DoubleSide }),
+    "black": new MeshBasicMaterial({ color: "#333", side: DoubleSide }),
     "red": new MeshBasicMaterial({ color: "red", side: DoubleSide }),
     "yellow": new MeshBasicMaterial({ color: "yellow", side: DoubleSide }),
     "orange": new MeshBasicMaterial({ color: "orange", side: DoubleSide }),
 }
 
 
-type FaceColors = Record<Face, FaceColor>
+export type FaceColors = Record<Face, FaceColor>
 
 export const faceColorsDefault: FaceColors = {
     U: "yellow",
